@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<title>ХАБЭА-2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+/* CSS код хэвээр үлдэнэ */
+body{font-family:'Montserrat',sans-serif;margin:0;padding:0;background:#f4f7f6;color:#333;min-width:1000px}
+.container{max-width:98%;margin:20px auto;padding:20px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,0.1);border-radius:8px}
+h2,h3{text-align:center;color:#004d40;margin-bottom:20px}
+#dataForm{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px;padding:15px;border:1px solid #e0e0e0;border-radius:6px;background:#e8f5e9;align-items:center}
+#dataForm select,#dataForm input[type="text"],#dataForm input[type="date"],#dataForm input[type="file"],#dataForm button{padding:10px;border:1px solid #ccc;border-radius:4px;font-size:14px;flex:1;min-width:150px}
+#dataForm input[type="file"]{padding:5px}
+#dataForm button{background:#00796b;color:#fff;cursor:pointer;font-weight:700;transition:background 0.3s}
+#dataForm button:hover{background:#004d40}
+.export-buttons{text-align:center;margin:20px 0;display:flex;gap:15px;justify-content:center;flex-wrap:wrap}
+.export-buttons button{padding:12px 25px;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;color:#fff}
+.btn-pdf{background:#d32f2f}.btn-pdf:hover{background:#b71c1c}
+.btn-excel{background:#388e3c}.btn-excel:hover{background:#2e7d32}
+.btn-json{background:#1976d2}.btn-json:hover{background:#1565c0}
+.btn-print{background:#7b1fa2}.btn-print:hover{background:#6a1b9a}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px;table-layout:auto}
+th,td{border:1px solid #c8e6c9;padding:10px 8px;text-align:center;word-wrap:break-word;vertical-align:middle}
+#dataTable th:nth-child(1){width:2%}
+#dataTable th:nth-child(2){width:12%}
+#dataTable th:nth-child(3){width:35%}
+#dataTable th:nth-child(4){width:10%}
+#dataTable th:nth-child(5){width:8%}
+#dataTable th:nth-child(6){width:10%}
+#dataTable th:nth-child(7){width:11%}
+#dataTable th:nth-child(8){width:7%}
+th{background:#b2dfdb;color:#004d40;font-weight:700;text-transform:uppercase;font-size:12px}
+tr:nth-child(even){background:#f1f8e9}
+img{max-width:200px;max-height:200px;height:auto;border-radius:4px;vertical-align:middle;margin:5px 0;cursor:pointer;object-fit:contain}
+#dataTable tr td:nth-child(7),#dataTable th:nth-child(7){background:#bbdefb}
+#dataTable tr td:nth-child(8),#dataTable th:nth-child(8){background:#c8e6c9}
+td select,td input[type="text"]{padding:6px 8px;border:1px solid #a5d6a7;border-radius:3px;background:#fff;width:95%;box-sizing:border-box;font-size:13px}
+#categorySummary th{background:#80cbc4}
+#categorySummary tfoot td{font-weight:700;background:#4db6ac;color:#fff;font-size:14px}
+#detailedSummaryTable th{background:#ffccbc}
+#detailedSummaryTable td:nth-child(1){font-weight:700;text-align:left;padding:12px}
+#detailedSummaryTable td:nth-child(2){text-align:left;padding:12px}
+.chart-container{display:flex;gap:30px;margin:30px 0;flex-wrap:wrap}
+.chart-box{flex:1;min-width:450px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.chart-box h4{text-align:center;color:#004d40;margin-bottom:15px;font-size:16px}
+canvas{max-height:350px}
+@media print{.export-buttons,#dataForm,td select,td input[type="text"]{display:none!important}body{background:#fff}.container{box-shadow:none;max-width:100%}}
+.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.9)}
+.modal-content{margin:auto;display:block;max-width:90%;max-height:90%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.close{position:absolute;top:15px;right:35px;color:#f1f1f1;font-size:40px;font-weight:700;cursor:pointer}
+.close:hover{color:#bbb}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Замын ...-р ангийн ...-р хэсэг</h2>
+<h2>ХӨДӨЛМӨРИЙН АЮУЛГҮЙ БАЙДАЛ, ЭРҮҮЛ АХУЙ - 2026</h2>
+<div class="export-buttons">
+<button class="btn-pdf" onclick="exportToPDF()">📄 PDF</button>
+<button class="btn-excel" onclick="exportToExcel()">📊 Excel</button>
+<button class="btn-json" onclick="exportToJSON()">💾 JSON</button>
+<button class="btn-print" onclick="window.print()">🖨️ Хэвлэх</button>
+</div>
+<form id="dataForm">
+<select id="category">
+<option value="Багаж хэрэгсэл, тоног төхөөрөмжтэй холбоотой">Багаж хэрэгсэл, тоног төхөөрөмжтэй холбоотой</option>
+<option value="Машинтай холбоотой">Машинтай холбоотой</option>
+<option value="Цахилгааны утас, монтажтай холбоотой">Цахилгааны утас, монтажтай холбоотой</option>
+<option value="Ажлын хувцас, хамгаалах хэрэгсэлтэй холбоотой">Ажлын хувцас, хамгаалах хэрэгсэлтэй холбоотой</option>
+<option value="Бичиг баримт, сургалттай холбоотой">Бичиг баримт, сургалттай холбоотой</option>
+<option value="Галын аюулгүй байдалтай холбоотой">Галын аюулгүй байдалтай холбоотой</option>
+<option value="Бусад">Бусад</option>
+</select>
+<input type="text" id="foundItem" placeholder="Илэрсэн үл тохирол" required>
+<input type="file" id="photo" accept="image/*">
+<input type="date" id="deadline" required>
+<button type="submit">Нэмэх</button>
+</form>
+<h3>Бүх бүртгэл</h3>
+<table><thead><tr><th>№</th><th>Ангилал</th><th>Илэрсэн үл тохирол / Зураг</th><th>Хариуцах ажилтан</th><th>Хугацаа</th><th>Үзлэг хийсэн ажилтан</th><th>Гүйцэтгэл</th><th>Үйлдэл</th></tr></thead><tbody id="dataTable"></tbody></table>
+<h3>Ангиллын статистик</h3>
+<div class="chart-container">
+<div class="chart-box"><h4>Хүснэгт</h4><table><thead><tr><th>Ангилал</th><th>Нийт үл тохирол</th><th>Хувь (%)</th></tr></thead><tbody id="categorySummary"></tbody><tfoot><tr><td>НИЙТ</td><td id="totalCount">0</td><td>100%</td></tr></tfoot></table></div>
+<div class="chart-box"><h4>График</h4><canvas id="categoryChart"></canvas></div>
+</div>
+<h3>Гүйцэтгэлийн дэлгэрэнгүй тайлан</h3>
+<div class="chart-container">
+<div class="chart-box"><h4>Хүснэгт</h4><table id="detailedSummaryTable"><thead><tr><th>Гүйцэтгэлийн статус</th><th>Тайлбар</th></tr></thead><tbody id="performanceSummary"></tbody></table></div>
+<div class="chart-box"><h4>График</h4><canvas id="performanceChart"></canvas></div>
+</div>
+</div>
+<div id="imageModal" class="modal"><span class="close" onclick="closeModal()">&times;</span><img class="modal-content" id="modalImage"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+<script>
+let data=JSON.parse(localStorage.getItem("tableData"))||[];let catChart=null,perfChart=null;
+
+// Үзлэг хийсэн ажилтны жагсаалт (Select цэсэнд ашиглана)
+const INSPECTORS = [
+    "Сонгоно уу", 
+    "Комиссын бүрэлдэхүүн",
+    "ПД",
+    "ПДБк",
+    "ПДБр",
+    "ПДБс",
+    "пр"
+];
+
+document.getElementById("dataForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    let c=document.getElementById("category").value,
+        f=document.getElementById("foundItem").value,
+        p=document.getElementById("photo"),
+        d=document.getElementById("deadline").value;
+    
+    if(c&&f&&d){
+        if(p.files.length>0){
+            let r=new FileReader();
+            // Зургийг Base64 string болгох
+            r.onload=e=>saveEntry(c,f,e.target.result.split(",")[1],d);
+            r.readAsDataURL(p.files[0])
+        }else {
+            saveEntry(c,f,"",d);
+        }
+        document.getElementById("dataForm").reset()
+    }
+});
+
+function saveEntry(c,f,p,d){
+    let o=prompt("Хариуцах ажилтан:")||"Тодорхойгүй";
+    // inspector-ийг эхлээд "Сонгоно уу" эсвэл хоосон утгаар хадгална.
+    data.push({category:c,foundItem:f,photoURL:p,owner:o,deadline:d,inspector:INSPECTORS[0],status:"Биелээгүй"});
+    localStorage.setItem("tableData",JSON.stringify(data));
+    loadTable();
+}
+
+function loadTable(){
+    let t=document.getElementById("dataTable"),
+        cs=document.getElementById("categorySummary"),
+        ps=document.getElementById("performanceSummary");
+    
+    t.innerHTML="";
+    cs.innerHTML="";
+    ps.innerHTML="";
+    
+    let cc={}, // Category Count
+        sg={}, // Status Group
+        total=0;
+
+    data.forEach((item,i)=>{
+        cc[item.category]=(cc[item.category]||0)+1;
+        total++;
+        
+        // --- FIX 1: Гүйцэтгэлтэй ажлуудыг бүх статусаар нь бүлэглэх ---
+        sg[item.status]=sg[item.status]||[];
+        sg[item.status].push({foundItem:item.foundItem,owner:item.owner})
+        // -------------------------------------------------------------
+        
+        // Үзлэг хийсэн ажилтны цэсний сонголтуудыг үүсгэх
+        let inspectorOptions = INSPECTORS.map(name => 
+            `<option value="${name}" ${item.inspector === name ? "selected" : ""}>${name}</option>`
+        ).join('');
+        
+        // Хүснэгтийн мөр үүсгэх
+        let r=document.createElement("tr");
+        let photoDisplay = item.photoURL 
+            ? '<img src="data:image/png;base64,'+item.photoURL+'" onclick="openModal(\'data:image/png;base64,'+item.photoURL+'\')">' 
+            : '';
+
+        r.innerHTML = `
+            <td>${i+1}</td>
+            <td>${item.category}</td>
+            <td>
+                <div style="text-align:left;padding:8px">${item.foundItem}</div>
+                ${photoDisplay}
+            </td>
+            <td>${item.owner}</td>
+            <td>${item.deadline}</td>
+            <td>
+                <select onchange="updateInspector(${i},this.value)">
+                    ${inspectorOptions}
+                </select>
+            </td>
+            <td>
+                <select onchange="updateStatus(${i},this.value)">
+                    <option ${item.status==="Биелээгүй"?"selected":""}>Биелээгүй</option>
+                    <option ${item.status==="Биелэсэн"?"selected":""}>Биелэсэн</option>
+                    <option ${item.status==="Материал хангагдаагүй"?"selected":""}>Материал хангагдаагүй</option>
+                    <option ${item.status==="Хугацаа болоогүй"?"selected":""}>Хугацаа болоогүй</option>
+                    <option ${item.status==="Засварт өгсөн"?"selected":""}>Засварт өгсөн</option>
+                </select>
+            </td>
+            <td>
+                <select onchange="handleAction(${i},this.value)">
+                    <option value="">хадгалах</option>
+                    <option value="delete">Устгах</option>
+                </select>
+            </td>
+        `;
+        t.appendChild(r);
+    });
+
+    document.getElementById("totalCount").textContent=total;
+    
+    // Ангиллын хураангуй (Хүснэгт)
+    for(let c in cc){
+        let r=document.createElement("tr");
+        r.innerHTML=`<td>${c}</td><td>${cc[c]}</td><td>${((cc[c]/total)*100).toFixed(1)}%</td>`;
+        cs.appendChild(r);
+    }
+
+    // --- FIX 2: Гүйцэтгэлийн дэлгэрэнгүй тайлан (Хүснэгт)-д бүх статусыг оруулах ---
+    const performanceStatuses = ["Биелээгүй", "Биелэсэн", "Материал хангагдаагүй", "Хугацаа болоогүй", "Засварт өгсөн"];
+    let hasPerformanceData = false;
+
+    performanceStatuses.forEach(s => {
+        let items = sg[s] || [];
+        if (items.length > 0) {
+            hasPerformanceData = true;
+            let fr = document.createElement("tr");
+            
+            // Эхний мөрийн rowspan
+            fr.innerHTML = `
+                <td rowspan="${items.length}">${s} (${items.length})</td>
+                <td><b>${items[0].foundItem}</b> / ${items[0].owner}</td>
+            `;
+            ps.appendChild(fr);
+
+            // Дараагийн мөрүүд
+            for (let i = 1; i < items.length; i++) {
+                let nr = document.createElement("tr");
+                nr.innerHTML = `<td><b>${items[i].foundItem}</b> / ${items[i].owner}</td>`;
+                ps.appendChild(nr);
+            }
+        }
+    });
+
+    if (!hasPerformanceData && total > 0) { // Нийт бүртгэл байгаа ч статусууд дээр хуваагдаагүй бол
+        ps.innerHTML='<tr><td colspan="2" style="text-align:center">Одоогоор бүртгэлүүд статусаар хуваагдаагүй байна.</td></tr>';
+    } else if (total === 0) {
+         ps.innerHTML='<tr><td colspan="2" style="text-align:center">Одоогоор бүртгэл байхгүй байна.</td></tr>';
+    }
+    // ----------------------------------------------------------------------------------
+
+    updateCharts(cc,sg);
+}
+
+function updateCharts(cc,sg){
+    let labels=Object.keys(cc),
+        values=Object.values(cc),
+        total=values.reduce((a,b)=>a+b,0);
+    
+    // Ангиллын график (Bar Chart)
+    if(catChart)catChart.destroy();
+    catChart=new Chart(document.getElementById("categoryChart"),{
+        type:'bar',
+        data:{
+            labels,
+            datasets:[{
+                data:values,
+                backgroundColor:['rgba(129,199,132,0.8)','rgba(255,183,77,0.8)','rgba(79,195,247,0.8)','rgba(229,115,115,0.8)','rgba(186,104,200,0.8)','rgba(174,213,129,0.8)','rgba(255,138,101,0.8)'],
+                borderColor:['rgba(67,160,71,1)','rgba(255,152,0,1)','rgba(3,169,244,1)','rgba(229,57,53,1)','rgba(142,36,170,1)','rgba(139,195,74,1)','rgba(255,87,34,1)'],
+                borderWidth:2
+            }]
+        },
+        options:{
+            responsive:true,
+            plugins:{
+                legend:{display:false},
+                datalabels:{
+                    anchor:'end',
+                    align:'top',
+                    formatter:v=>v+'\n('+((v/total)*100).toFixed(1)+'%)',
+                    font:{weight:'bold',size:12},
+                    color:'#004d40'
+                }
+            },
+            scales:{
+                y:{beginAtZero:true,ticks:{stepSize:1}}
+            }
+        },
+        plugins:[ChartDataLabels]
+    });
+
+    // --- FIX 3: Гүйцэтгэлийн график (Doughnut Chart)-д бүх статусыг оруулах ---
+    let pl=[],pv=[];
+    // Бүх 5 статусыг тооцоонд оруулна
+    const performanceStatuses = ["Биелээгүй", "Биелэсэн", "Материал хангагдаагүй", "Хугацаа болоогүй", "Засварт өгсөн"]; 
+    performanceStatuses.forEach(s=>{
+        let c=(sg[s]||[]).length;
+        if(c>0){
+            pl.push(s);
+            pv.push(c);
+        }
+    });
+    let pt=pv.reduce((a,b)=>a+b,0); // Нийт гүйцэтгэлийн тоо нь одоо нийт бүртгэлийн тоотой тэнцэнэ (total = pt)
+    
+    if(perfChart)perfChart.destroy();
+    perfChart=new Chart(document.getElementById("performanceChart"),{
+        type:'doughnut',
+        data:{
+            labels:pl,
+            datasets:[{
+                data:pv,
+                // 5 статуст тохируулсан шинэ өнгөний жагсаалт (Биелээгүйг эхэнд улаанаар)
+                backgroundColor:['rgba(229,57,53,0.8)','rgba(76,175,80,0.8)','rgba(255,152,0,0.8)','rgba(33,150,243,0.8)','rgba(156,39,176,0.8)'], 
+                borderColor:['rgba(198,40,40,1)','rgba(56,142,60,1)','rgba(245,124,0,1)','rgba(25,118,210,1)','rgba(123,31,162,1)'],
+                borderWidth:3
+            }]
+        },
+        options:{
+            cutout:'55%',
+            plugins:{
+                legend:{
+                    position:'bottom',
+                    labels:{
+                        generateLabels:c=>c.data.labels.map((l,i)=>{
+                            let v=c.data.datasets[0].data[i];
+                            let percent = pt > 0 ? ((v/pt)*100).toFixed(1) : 0;
+                            return{
+                                text:l+': '+v+' ('+percent+'%)',
+                                fillStyle:c.data.datasets[0].backgroundColor[i],
+                                index:i
+                            }
+                        })
+                    }
+                },
+                datalabels:{
+                    formatter:(v)=>pt > 0 ? v+'\n'+((v/pt)*100).toFixed(1)+'%' : v,
+                    color:'#fff',
+                    font:{weight:'bold',size:13}
+                }
+            }
+        },
+        plugins:[ChartDataLabels,{
+            id:'centerText',
+            beforeDraw:c=>{
+                let ctx=c.ctx;
+                ctx.save();
+                let x=(c.chartArea.left+c.chartArea.right)/2,
+                    y=(c.chartArea.top+c.chartArea.bottom)/2;
+                ctx.textAlign='center';
+                ctx.textBaseline='middle';
+                ctx.font='bold 24px Montserrat';
+                ctx.fillStyle='#004d40';
+                ctx.fillText(pt,x,y-10);
+                ctx.font='14px Montserrat';
+                ctx.fillStyle='#00796b';
+                ctx.fillText('Нийт',x,y+15);
+                ctx.restore();
+            }
+        }]
+    })
+    // ----------------------------------------------------------------------------------
+}
+
+function updateStatus(i,v){
+    data[i].status=v;
+    localStorage.setItem("tableData",JSON.stringify(data));
+    loadTable();
+}
+
+function updateInspector(i,v){
+    data[i].inspector=v;
+    localStorage.setItem("tableData",JSON.stringify(data));
+    // loadTable() дуудахгүй
+}
+
+function handleAction(i,a){
+    if(a==="delete"&&confirm("Устгах уу?")){
+        data.splice(i,1);
+        localStorage.setItem("tableData",JSON.stringify(data));
+        loadTable();
+    }
+}
+
+function openModal(src){
+    document.getElementById("imageModal").style.display="block";
+    document.getElementById("modalImage").src=src;
+}
+
+function closeModal(){
+    document.getElementById("imageModal").style.display="none";
+}
+
+function exportToPDF(){
+    html2pdf().from(document.querySelector(".container")).save("ХАБЭА-2025.pdf");
+}
+
+function exportToExcel(){
+    let csv="\ufeff№,Ангилал,Үл тохирол,Хариуцах,Хугацаа,Үзлэгч,Гүйцэтгэл\n";
+    
+    data.forEach((item,i) => {
+        csv += `${i+1},${item.category},"${item.foundItem.replace(/"/g, '""')}",${item.owner},${item.deadline},${item.inspector},${item.status}\n`;
+    });
+
+    let link=document.createElement("a");
+    link.href=encodeURI("data:text/csv;charset=utf-8,"+csv);
+    link.download="ХАБЭА-2025.csv";
+    link.click();
+}
+
+function exportToJSON(){
+    let link=document.createElement("a");
+    link.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
+    link.download="ХАБЭА-2025.json";
+    link.click();
+}
+
+loadTable();
+</script>
+</body>
+</html>
